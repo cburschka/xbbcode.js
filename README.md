@@ -1,7 +1,7 @@
 xbbcode.js
 ==========
 
-A JavaScript port of the my xbbcode module for Drupal.
+A JavaScript port of my xbbcode module for Drupal.
 
 xbbcode parses arbitrary text to find a properly nested tree of BBCode tags in square brackets,
 and renders these tags according to markup strings and rendering callbacks that it has been
