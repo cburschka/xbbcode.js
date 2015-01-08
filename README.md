@@ -19,7 +19,7 @@ tags to output, in the form of `tagEngine` described below:
                   `}`
 
     tagName   ::= /[a-z]+/
-    tag       ::= renderer | extendedTag
+    tag       ::= renderer | extended
     extended  ::= `{`
                       `body` `:` renderer `,`
                     [ `selfclosing` `:` bool `,` ]
