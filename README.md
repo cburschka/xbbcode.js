@@ -32,7 +32,7 @@ A string renderer consists of any text with the following optional placeholders:
 `{content}`, `{option}`, `{name}`, or `{attr:attributeName}` for any attribute name. 
 The following examples show what part of the input these placeholders will be replaced with.
 
-* `[{name}={option}]{content}][/{name}]`
+* `[{name}={option}]{content}[/{name}]`
 * `[{name} attributeName="{attr:attributeName}" attribute2="{attr:attribute2}"]{content}][/{name}]`
 
 A function renderer receives a single argument, which is an object with the following properties: 
