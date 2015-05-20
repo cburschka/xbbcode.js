@@ -126,7 +126,7 @@ xbbcode = {
         parent.offset = tag.end; // Skip past the closing tag.
         // Break open tags until we get to the right one.
         var current = stack.pop();
-        openByName[current]--;
+        openByName[current.name]--;
         parent = stack[stack.length-1];
 
         while (stack && current.name != tag.name) {
@@ -135,7 +135,7 @@ xbbcode = {
           parent.offset = current.offset;
 
           current = stack.pop();
-          openByName[current]--;
+          openByName[current.name]--;
           parent = stack[stack.length-1];
         }
 
