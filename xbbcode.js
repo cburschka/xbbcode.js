@@ -70,7 +70,7 @@ xbbcode = {
     var re = new RegExp(this.RE_TAG, 'gi');
     var m;
     while ((m = re.exec(text)) !== null) {
-      tags[tags.length] = {
+      tags.push({
         open: m[1] === '',
         name: m[2],
         option: m[4],
@@ -80,7 +80,7 @@ xbbcode = {
         end: m.index + m[0].length,
         offset: m.index + m[0].length,
         content: ''
-      };
+      });
     }
     return tags;
   },
