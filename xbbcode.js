@@ -1,7 +1,7 @@
 /*
  * This is a JavaScript implementation of xbbcode,
  * originally a PHP module written for Drupal.
- * Copyright (c) 2014 "Arancaytar" (Christoph Burschka).
+ * Copyright (c) 2014-2015 Christoph Burschka <christoph@burschka.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
