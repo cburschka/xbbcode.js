@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-xbbcode = {
+var XBBCode = (function() {
   /**
    * Generate a new XBBCode parser.
    *
@@ -35,46 +35,42 @@ xbbcode = {
    * the render string may contain the placeholders {content}, {option}, {name},
    * or any attribute key.
    */
-  init: function(tagEngine) {
-    // Match a quote, optionally.
-    var quote = '"|\'|&(?:quot|#039);|';
-    // Match an attribute (key=value pair).
-    // The attribute value concludes after the same quote (if any) is
-    // re-encountered followed by a white-space character, ], or the string end.
-    // (string end cannot occur when matching a full tag).
-    var filter = {
-      RE_ATTR: '\\s+(\\w+)=(' + quote + ')(.*?)\\2(?=\\s|\\]|$)',
-      RE_TAG: '\\[(\\/?)' + // Match the [ and an optional /.
-                  '(\\w+)' +      // The tag name has no white space.
-                  '(?:' +
-                    '=(' + quote + ')(.*?)\\3(?=\\])' + // =option
-                    '|(\\s+(\\w+)=(' + quote + ')(.*?)\\7(?=\\s|\\]|$)+)' + // attributes
-                  '(?=\\1))?' + // reject closing tags with attributes.
-                  '\\]', // match the final ].
-      tagEngine: tagEngine
-    };
-
-    // Pseudo-prototype, because real prototyping apparently doesn't work.
-    for (x in this) {
-      filter[x] = this[x];
+  function XBBCode(tags) {
+    return {
+      tagEngine: tags,
+      render: render,
     }
-    return filter;
-  },
+  }
 
-  render: function(text) {
-    return this.processTags(text, this.findTags(text));
-  },
+  // Match a quote, optionally.
+  var quote = '"|\'|&(?:quot|#039);|';
+  // Match an attribute (key=value pair).
+  // The attribute value concludes after the same quote (if any) is
+  // re-encountered followed by a white-space character, ], or the string end.
+  // (string end cannot occur when matching a full tag).
+  var re_attr = '\\s+(\\w+)=(' + quote + ')(.*?)\\2(?=\\s|\\]|$)';
+  var re_tag  = '\\[(\\/?)' + // Match the [ and an optional /.
+                '(\\w+)' +      // The tag name has no white space.
+                '(?:' +
+                  '=(' + quote + ')(.*?)\\3(?=\\])' + // =option
+                  '|(\\s+(\\w+)=(' + quote + ')(.*?)\\7(?=\\s|\\]|$)+)' + // attributes
+                '(?=\\1))?' + // reject closing tags with attributes.
+                '\\]'; // match the final ].
 
-  findTags: function(text) {
+  function render(text) {
+    return processTags(text, findTags(text), this.tagEngine);
+  }
+
+  function findTags(text) {
     var tags = [];
-    var re = new RegExp(this.RE_TAG, 'gi');
+    var re = new RegExp(re_tag, 'gi');
     var m;
     while ((m = re.exec(text)) !== null) {
       tags.push({
         open: m[1] === '',
         name: m[2],
         option: m[4],
-        attrs: this.parseAttributes(m[5]),
+        attrs: parseAttributes(m[5]),
         tag: m[0],
         start: m.index,
         end: m.index + m[0].length,
@@ -83,19 +79,19 @@ xbbcode = {
       });
     }
     return tags;
-  },
+  };
 
-  parseAttributes: function(text) {
+  function parseAttributes(text) {
     var attrs = {};
-    var re = new RegExp(this.RE_ATTR, 'gi');
+    var re = new RegExp(re_attr, 'gi');
     var m;
     while ((m = re.exec(text)) !== null) {
       attrs[m[1]] = m[3];
     }
     return attrs;
-  },
+  };
 
-  processTags: function(text, tags) {
+  function processTags(text, tags, tagEngine) {
     // Initialize tag counter.
     var openByName = {};
     for (var i in tags) {
@@ -109,7 +105,8 @@ xbbcode = {
     for (var i in tags) {
       parent = stack[stack.length-1];
       var tag = tags[i];
-      if (!this.tagEngine[tag.name]) continue;
+      var renderer = tagEngine[tag.name];
+      if (!renderer) continue;
 
       // Append everything before this tag to the last open one.
       parent.content += text.substring(parent.offset, tag.start);
@@ -118,8 +115,8 @@ xbbcode = {
       // Found a new opening tag.
       if (tag.open) {
         // If the tag is self-closing, render and append.
-        if (this.tagEngine[tag.name].selfclosing) {
-          var rendered = this.renderTag(tag);
+        if (renderer.selfclosing) {
+          var rendered = renderTag(tag, renderer);
           if (typeof rendered != 'string') rendered = tag.tag;
           parent.content += rendered;
           parent.offset = tag.end;
@@ -148,9 +145,9 @@ xbbcode = {
         }
 
         // If the tag forbids rendering its content, revert to unrendered.
-        if (this.tagEngine[tag.name].nocode)
+        if (renderer.nocode)
           current.content = text.substring(current.end, current.offset);
-        var rendered = this.renderTag(current);
+        var rendered = renderTag(current, renderer);
         if (typeof rendered != 'string')
           rendered = current.tag + current.content + tag.tag;
         parent.content += rendered;
@@ -163,17 +160,14 @@ xbbcode = {
 
     // Break the dangling open tags.
     while (stack.length > 1) {
-      console.log("Breaking", JSON.stringify(stack));
       var current = stack.pop();
       parent = stack[stack.length-1];
       parent.content += current.tag + current.content;
-      console.log("Broken",JSON.stringify(stack));
     }
     return root.content;
-  },
+  };
 
-  renderTag: function(tag) {
-    var renderer = this.tagEngine[tag.name];
+  function renderTag(tag, renderer) {
     if (typeof renderer === 'object') {
       renderer = renderer.body;
     }
@@ -201,5 +195,7 @@ xbbcode = {
         return '';
       });
     }
-  }
-};
+  };
+
+  return XBBCode;
+})();
