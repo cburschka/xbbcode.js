@@ -14,18 +14,14 @@ xbbcode.js creates a global function named `xbbcode`. To create a parser,
 this function is invoked with a single argument containing the mapping of BBCode
 tags to output, in the form of `tagEngine` described below:
 
-    tagEngine ::= `{`
-                      ( tagName `:` tag ) *
-                  `}`
-
-    tagName   ::= /[a-z]+/
-    tag       ::= renderer | extended
-    extended  ::= `{`
-                      `body` `:` renderer `,`
-                    [ `selfclosing` `:` bool `,` ]
-                    [ `nocode`      `:` bool `,` ]
-                  `}`
-    renderer  ::= string | function
+    tagEngine ::= {object} { tagName : (renderer | extended) }
+    tagName   ::= {string} (must match /\w+/)
+    extended  ::= {object} {
+                      "body" : renderer
+                   [, "selfclosing" : {bool} ]
+                   [, "nocode"      : {bool} ]
+                  }
+    renderer  ::= {string} | {function}
 
 
 A string renderer consists of any text with the following optional placeholders: 
@@ -58,7 +54,7 @@ Sample
         nocode: true
       }
     };
-    bbcodeParser = xbbcode.init(bbCodeTags);
+    bbcodeParser = XBBCode(bbCodeTags);
 
     input = '[quote][code][url=http://example.org/][img]http://example.org/[b]image[/b].png[/img][/code][/url][/quote]';
     console.log(bbcodeParser.render(input);
