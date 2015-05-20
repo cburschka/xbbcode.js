@@ -18,11 +18,19 @@
  */
 
 xbbcode = {
-  /* tagEngine ::= { tagname : <renderer> | <extended> }
-   * renderer ::= string | function
-   * extended ::= | { body: <renderer>, selfclosing: bool, nocode: bool }
+  /**
+   * Generate a new XBBCode parser.
    *
-   * the render function will receive a tag object with the keys
+   * @param tags: {object} (tagName : (renderer | extended))
+   *        tagName: {string}
+   *        renderer: {string} | {function}
+   *        extended: {object} {
+   *          "renderer": renderer,
+   *          ["selfclosing": {bool} ,]
+   *          ["nocode": {bool} ,]
+   *        }
+   *
+   * The render function will receive a tag object with the keys
    * "content", "option", "attrs" (keyed by attribute name) and "name".
    * the render string may contain the placeholders {content}, {option}, {name},
    * or any attribute key.
