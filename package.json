@@ -1,0 +1,25 @@
+{
+  "name": "xbbcode.js",
+  "version": "0.0.0-dev0",
+  "description": "An extensible BBCode parser.",
+  "main": "xbbcode.js",
+  "babel": {
+    "presets": ["es2015"]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cburschka/xbbcode.js.git"
+  },
+  "keywords": [
+    "bbcode"
+  ],
+  "author": "Christoph Burschka",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cburschka/xbbcode.js/issues"
+  },
+  "homepage": "https://github.com/cburschka/xbbcode.js#readme"
+}

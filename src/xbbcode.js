@@ -5,7 +5,7 @@
  * Released under the MIT license.
  */
 
-var XBBCode = (function() {
+const XBBCode = (() => {
   /**
    * Generate a new XBBCode parser.
    *
@@ -23,21 +23,24 @@ var XBBCode = (function() {
    * the render string may contain the placeholders {content}, {option}, {name},
    * or any attribute key.
    */
-  function XBBCode(tags) {
-    return {
-      tagEngine: tags,
-      render: render,
+  const XBBCode = class {
+    constructor(tagEngine) {
+      this.tagEngine = tagEngine;
+    }
+
+    render(text) {
+      return processTags(text, findTags(text), this.tagEngine);
     }
   }
 
   // Match a quote, optionally.
-  var quote = '"|\'|&(?:quot|#039);|';
+  const quote = '"|\'|&(?:quot|#039);|';
   // Match an attribute (key=value pair).
   // The attribute value concludes after the same quote (if any) is
   // re-encountered followed by a white-space character, ], or the string end.
   // (string end cannot occur when matching a full tag).
-  var re_attr = '\\s+(\\w+)=(' + quote + ')(.*?)\\2(?=\\s|\\]|$)';
-  var re_tag  = '\\[(\\/?)' + // Match the [ and an optional /.
+  const re_attr = '\\s+(\\w+)=(' + quote + ')(.*?)\\2(?=\\s|\\]|$)';
+  const re_tag  = '\\[(\\/?)' + // Match the [ and an optional /.
                 '(\\w+)' +      // The tag name has no white space.
                 '(?:' +
                   '=(' + quote + ')(.*?)\\3(?=\\])' + // =option
@@ -45,14 +48,10 @@ var XBBCode = (function() {
                 '(?=\\1))?' + // reject closing tags with attributes.
                 '\\]'; // match the final ].
 
-  function render(text) {
-    return processTags(text, findTags(text), this.tagEngine);
-  }
-
-  function findTags(text) {
-    var tags = [];
-    var re = new RegExp(re_tag, 'gi');
-    var m;
+  const findTags = text => {
+    const tags = [];
+    const re = new RegExp(re_tag, 'gi');
+    let m;
     while ((m = re.exec(text)) !== null) {
       tags.push({
         open: m[1] === '',
@@ -69,32 +68,31 @@ var XBBCode = (function() {
     return tags;
   };
 
-  function parseAttributes(text) {
-    var attrs = {};
-    var re = new RegExp(re_attr, 'gi');
-    var m;
+  const parseAttributes = text => {
+    const attrs = {};
+    const re = new RegExp(re_attr, 'gi');
+    let m;
     while ((m = re.exec(text)) !== null) {
       attrs[m[1]] = m[3];
     }
     return attrs;
   };
 
-  function processTags(text, tags, tagEngine) {
+  const processTags = (text, tags, tagEngine) => {
     // Initialize tag counter.
-    var openByName = {};
-    for (var i in tags) {
-      openByName[tags[i].name] = 0;
-    }
+    const openByName = {};
+    tags.forEach(({name}) => {
+      openByName[name] = 0;
+    });
 
-    var root = {content: '', start: 0, offset: 0};
-    var stack = [root];
-    var parent;
+    const root = {content: '', start: 0, offset: 0};
+    const stack = [root];
+    let parent;
 
-    for (var i in tags) {
+    tags.forEach(tag => {
       parent = stack[stack.length-1];
-      var tag = tags[i];
-      var renderer = tagEngine[tag.name];
-      if (!renderer) continue;
+      let renderer = tagEngine[tag.name];
+      if (!renderer) return;
 
       // Append everything before this tag to the last open one.
       parent.content += text.substring(parent.offset, tag.start);
@@ -104,9 +102,7 @@ var XBBCode = (function() {
       if (tag.open) {
         // If the tag is self-closing, render and append.
         if (renderer.selfclosing) {
-          var rendered = renderTag(tag, renderer);
-          if (typeof rendered != 'string') rendered = tag.tag;
-          parent.content += rendered;
+          parent.content += String(renderTag(tag, renderer));
           parent.offset = tag.end;
         }
         else {
@@ -118,7 +114,7 @@ var XBBCode = (function() {
       else if (openByName[tag.name] > 0) {
         parent.offset = tag.end; // Skip past the closing tag.
         // Break open tags until we get to the right one.
-        var current = stack.pop();
+        let current = stack.pop();
         openByName[current.name]--;
         parent = stack[stack.length-1];
 
@@ -135,20 +131,18 @@ var XBBCode = (function() {
         // If the tag forbids rendering its content, revert to unrendered.
         if (renderer.nocode)
           current.content = text.substring(current.end, current.offset);
-        var rendered = renderTag(current, renderer);
-        if (typeof rendered != 'string')
-          rendered = current.tag + current.content + tag.tag;
-        parent.content += rendered;
+        parent.content += String(renderTag(current, renderer));
         parent.offset = tag.end;
       }
-    }
+    });
+
     // Append the remainder of the text to the last open tag.
     parent = stack[stack.length-1];
     parent.content += text.substring(parent.offset);
 
     // Break the dangling open tags.
     while (stack.length > 1) {
-      var current = stack.pop();
+      current = stack.pop();
       parent = stack[stack.length-1];
       parent.content += current.tag + current.content;
     }
