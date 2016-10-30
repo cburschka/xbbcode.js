@@ -38,7 +38,7 @@ const XBBCode = (() => {
       while (match = pattern.exec(text)) {
         const {index} = match;
         const [tag, close, name, _, option, attributes] = match;
-        if (!this.plugins[name]) return;
+        if (!this.plugins[name]) continue;
         tokens.push(
           text.substring(last, index),
           {tag, name, option, attributes, open: !close}
