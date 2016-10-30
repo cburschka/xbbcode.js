@@ -1,8 +1,8 @@
 {
   "name": "xbbcode.js",
-  "version": "0.0.0-dev0",
+  "version": "2.0.0",
   "description": "An extensible BBCode parser.",
-  "main": "xbbcode.js",
+  "main": "src/xbbcode.js",
   "babel": {
     "presets": ["es2015"]
   },
