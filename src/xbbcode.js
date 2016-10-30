@@ -9,29 +9,25 @@ const XBBCode = (() => {
   /**
    * Generate a new XBBCode parser.
    *
-   * @param tags: {object} (tagName : (renderer | extended))
-   *        tagName: {string}
-   *        renderer: {string} | {function}
-   *        extended: {object} {
-   *          "renderer": renderer,
-   *          ["selfclosing": {bool} ,]
-   *          ["nocode": {bool} ,]
-   *        }
+   * @param tags An object keyed by tag name, the values being strings or functions.
    *
-   * The render function will receive a tag object with the keys
-   * "content", "option", "attrs" (keyed by attribute name) and "name".
-   * the render string may contain the placeholders {content}, {option}, {name},
-   * or any attribute key.
+   * A render function will receive a BBCodeElement object with the methods
+   * getContent(), getSource(), getAttribute(), getOption() and getName().
+   * A template string may contain the placeholders
+  *  {content}, {source}, {attribute.*}, {option} and {name}.
    */
   const XBBCode = class {
+    static create(plugins) {
+      const processor = new XBBCode(plugins);
+      return text => processor.process(text);
+    }
+
     constructor(plugins) {
       this.plugins = plugins;
     }
 
-    render(text) {
-      const tags = this.findTags(text);
-      const tree = this.buildTree(tags, text);
-      return tree.render();
+    process(text) {
+      return this.parser(this.lexer(text)).getContent();
     }
 
     lexer(text) {
@@ -41,22 +37,19 @@ const XBBCode = (() => {
       let last = 0;
       while (match = pattern.exec(text)) {
         const {index} = match;
-        const [tag, close, name, _, attributes] = match;
+        const [tag, close, name, _, option, attributes] = match;
         if (!this.plugins[name]) return;
         tokens.push(
           text.substring(last, index),
-          {
-            tag, name, option,
-            open: !!close,
-            attributes: BBCodeElement.parseAttributes(attributes),
-          }
+          {tag, name, option, attributes, open: !close}
         );
         last = index + tag.length;
       }
+      tokens.push(text.substring(last));
       return tokens;
     }
 
-    parse(tokens) {
+    parser(tokens) {
       // Initialize tag counter.
       const countOpen = {};
       tokens.forEach(token => {
@@ -78,11 +71,11 @@ const XBBCode = (() => {
         // Found a closing tag that matches an open one.
         else if (countOpen[name]) {
           // Break all dangling tags inside the one that just closed.
-          while (stack.last().name != name) {
+          while (stack.last().getName() != name) {
             // Break a tag by appending its element and content to its parent.
             const broken = stack.pop();
-            stack.last().append(broken.tag, broken.children);
-            countOpen[broken.name]--;
+            stack.last().append(...broken.break());
+            countOpen[broken.getName()]--;
           }
 
           const closed = stack.pop();
@@ -94,7 +87,7 @@ const XBBCode = (() => {
       // Break the dangling open tags.
       while (stack.length > 1) {
         const broken = stack.pop();
-        stack.last().append(broken.tag, broken.children);
+        stack.last().append(...broken.break());
       }
       return stack[0];
     }
@@ -102,10 +95,13 @@ const XBBCode = (() => {
 
   const BBCodeElement = class {
     constructor(plugin, token) {
+      this.children = [];
       this.plugin = plugin;
       this.token = token;
-      this.name = token.name;
-      this.children = [];
+    }
+
+    break() {
+      return [this.token.tag, ...this.children];
     }
 
     getContent() {
@@ -113,6 +109,19 @@ const XBBCode = (() => {
         .map(child => child.render ? child.render() : child)
         .join('');
       return this.content;
+    }
+
+    getName() {
+      return this.token.name;
+    }
+
+    getOption() {
+      return this.token.option;
+    }
+
+    getAttribute(key) {
+      if (!this.attributes) this.parseAttributes();
+      return this.attributes[key];
     }
 
     getSource() {
@@ -123,7 +132,7 @@ const XBBCode = (() => {
     }
 
     append(...children) {
-      children.push(...[].concat(children));
+      this.children.push(...children);
     }
 
     render() {
@@ -132,26 +141,28 @@ const XBBCode = (() => {
       if (typeof renderer === 'string') {
         // Replace placeholders of the form {x}, but allow escaping
         // literal braces with {{x}}.
-        return renderer.replace(/\{(?:(attribute:)?(\w+)|(\{\w+\}))\}/g, function(_, attr, key, escape) {
+        return renderer.replace(/\{(?:(attribute\.)?(\w+)|(\{\w+\}))\}/g, (_, attr, key, escape) => {
           if (escape) return escape;
-          if (attr) return this.attributes[key] || '';
-          if (key == 'content') return this.getContent();
-          if (key == 'name') return this.name;
-          if (key == 'option') return this.option || '';
+          if (attr) return this.getAttribute(key) || '';
+          switch (key) {
+            case 'content': return this.getContent();
+            case 'name':    return this.getName();
+            case 'option':  return this.getOption();
+            case 'source':  return this.getSource();
+          }
           return '';
         });
       }
     }
 
-    static parseAttributes(text) {
-      const attributes = {};
+    parseAttributes() {
+      this.attributes = {};
       const pattern = new RegExp(RE_ATTRIBUTE, 'gi');
       let match;
-      while (match = pattern.exec(text)) {
+      while (match = pattern.exec(this.token.attributes)) {
         const [_, key, __, value] = match;
-        attributes[key] = value;
+        this.attributes[key] = value;
       }
-      return attributes;
     }
   }
 
@@ -176,6 +187,10 @@ const XBBCode = (() => {
     }
   }
 
-  if (module) module.exports = {XBBCode, BBCodeElement}
   return XBBCode;
 })();
+
+try {
+  module.exports = XBBCode;
+}
+catch (e) {}
