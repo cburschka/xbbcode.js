@@ -187,6 +187,13 @@ const XBBCode = (() => {
     }
   }
 
+  // Some platforms do not support extending Array.
+  try {
+    (new Stack()).last();
+  } catch(e) {
+    Array.prototype.last = Stack.prototype.last;
+  }
+
   return XBBCode;
 })();
 
