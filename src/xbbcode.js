@@ -7,7 +7,7 @@
 
 ((global, factory) => {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  global.moment = factory();
+  global.XBBCode = factory();
 })(window, () => {
   /**
    * Generate a new XBBCode parser.
