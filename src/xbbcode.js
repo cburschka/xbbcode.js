@@ -85,6 +85,8 @@
           stack.top().append(closed);
           countOpen[name]--;
         }
+        // Found a closing tag that wasn't open; just print it.
+        else stack.top().append(tag);
       });
 
       // Break the dangling open tags.
