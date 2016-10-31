@@ -5,7 +5,10 @@
  * Released under the MIT license.
  */
 
-const XBBCode = (() => {
+((global, factory) => {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  global.moment = factory();
+})(this, () => {
   /**
    * Generate a new XBBCode parser.
    *
@@ -85,11 +88,11 @@ const XBBCode = (() => {
       });
 
       // Break the dangling open tags.
-      while (stack.length > 1) {
+      while (stack.size() > 1) {
         const broken = stack.pop();
         stack.last().append(...broken.break());
       }
-      return stack[0];
+      return stack.last();
     }
   }
 
@@ -181,23 +184,23 @@ const XBBCode = (() => {
                 '(?=\\1))?' + // reject closing tags with attributes.
                 '\\]'; // match the final ].
 
-  const Stack = class extends Array {
+  const Stack = class {
+    constructor(...x) {
+      this.arr = [...x];
+    }
+    pop() {
+      return this.arr.pop();
+    }
+    push(...x) {
+      return this.arr.push(...x);
+    }
     last() {
-      return this[this.length - 1];
+      return this.arr[this.arr.length - 1];
+    }
+    size() {
+      return this.arr.length;
     }
   }
 
-  // Some platforms do not support extending Array.
-  try {
-    (new Stack()).last();
-  } catch(e) {
-    Array.prototype.last = Stack.prototype.last;
-  }
-
   return XBBCode;
-})();
-
-try {
-  module.exports = XBBCode;
-}
-catch (e) {}
+});
