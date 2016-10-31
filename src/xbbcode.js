@@ -30,7 +30,7 @@
     }
 
     process(text) {
-      return this.parser(this.lexer(text)).getContent();
+      return this.parser(this.lexer(text)).render();
     }
 
     lexer(text) {
@@ -59,7 +59,7 @@
         if (token.name) countOpen[token.name] = 0;
       });
 
-      const stack = new Stack(new BBCodeElement());
+      const stack = new Stack(new BBCodeElement(tag => tag.getContent()));
       tokens.forEach(token => {
         if (typeof token === 'string') return stack.top().append(token);
 
@@ -102,7 +102,7 @@
     constructor(plugin, token) {
       this.children = [];
       this.plugin = plugin;
-      this.token = token;
+      this.token = token || {};
     }
 
     break() {
@@ -141,12 +141,11 @@
     }
 
     render() {
-      const renderer = this.plugin.body || this.plugin;
-      if (typeof renderer === 'function') return renderer(this);
-      if (typeof renderer === 'string') {
+      const renderer = (typeof this.plugin === 'function') ?
+        this.plugin :
         // Replace placeholders of the form {x}, but allow escaping
         // literal braces with {{x}}.
-        return renderer.replace(/\{(?:(attribute\.)?(\w+)|(\{\w+\}))\}/g, (_, attr, key, escape) => {
+        tag => this.plugin.replace(/\{(?:(attribute\.)?(\w+)|(\{\w+\}))\}/g, (_, attr, key, escape) => {
           if (escape) return escape;
           if (attr) return this.getAttribute(key) || '';
           switch (key) {
@@ -157,7 +156,7 @@
           }
           return '';
         });
-      }
+      return renderer(this);
     }
 
     parseAttributes() {
