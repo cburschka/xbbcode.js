@@ -61,7 +61,7 @@
 
       const stack = new Stack(new BBCodeElement());
       tokens.forEach(token => {
-        if (typeof token === 'string') return stack.last().append(token);
+        if (typeof token === 'string') return stack.top().append(token);
 
         const {tag, name, open, option, attributes} = token;
         const plugin = this.plugins[name];
@@ -74,15 +74,15 @@
         // Found a closing tag that matches an open one.
         else if (countOpen[name]) {
           // Break all dangling tags inside the one that just closed.
-          while (stack.last().getName() != name) {
+          while (stack.top().getName() != name) {
             // Break a tag by appending its element and content to its parent.
             const broken = stack.pop();
-            stack.last().append(...broken.break());
+            stack.top().append(...broken.break());
             countOpen[broken.getName()]--;
           }
 
           const closed = stack.pop();
-          stack.last().append(closed);
+          stack.top().append(closed);
           countOpen[name]--;
         }
       });
@@ -90,9 +90,9 @@
       // Break the dangling open tags.
       while (stack.size() > 1) {
         const broken = stack.pop();
-        stack.last().append(...broken.break());
+        stack.top().append(...broken.break());
       }
-      return stack.last();
+      return stack.pop();
     }
   }
 
@@ -194,7 +194,7 @@
     push(...x) {
       return this.arr.push(...x);
     }
-    last() {
+    top() {
       return this.arr[this.arr.length - 1];
     }
     size() {
