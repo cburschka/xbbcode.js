@@ -1,6 +1,6 @@
 {
   "name": "xbbcode",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "An extensible BBCode parser.",
   "main": "src/xbbcode.js",
   "babel": {
